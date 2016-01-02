@@ -104,6 +104,7 @@ var Transformer = {
    * http://swagger.io/specification/#definitionsObject
    */
   getDefinitions: function getDefinitions(sails) {
+
     var definitions = _lodash2['default'].transform(sails.models, function (definitions, model, modelName) {
       definitions[model.identity] = {
         properties: Transformer.getDefinitionProperties(model.definition)
@@ -116,10 +117,11 @@ var Transformer = {
   },
 
   getDefinitionProperties: function getDefinitionProperties(definition) {
-    return _lodash2['default'].mapValues(definition, function (def, attrName) {
-      var property = _lodash2['default'].pick(def, ['type', 'description', 'format']);
 
-      return _spec2['default'].getPropertyType(property.type);
+    return _lodash2['default'].mapValues(definition, function (def, attrName) {
+      var property = _lodash2['default'].pick(def, ['type', 'description', 'format', 'model']);
+
+      return property.model && sails.config.blueprints.populate ? { '$ref': Transformer.generateDefinitionReference(property.model) } : _spec2['default'].getPropertyType(property.type);
     });
   },
 
@@ -141,8 +143,8 @@ var Transformer = {
       return result;
     }, []);
 
-    return _lodash2['default'].mapValues(pathGroups, function (pathGroup, key) {
-      return Transformer.getPathItem(sails, pathGroup, key);
+    return _lodash2['default'].mapValues(pathGroups, function (pathGroup) {
+      return Transformer.getPathItem(sails, pathGroup);
     });
   },
 
@@ -175,17 +177,21 @@ var Transformer = {
   /**
    * http://swagger.io/specification/#definitionsObject
    */
-  getDefinitionReference: function getDefinitionReference(sails, path) {
+  getDefinitionReferenceFromPath: function getDefinitionReferenceFromPath(sails, path) {
     var model = Transformer.getModelFromPath(sails, path);
     if (model) {
-      return '#/definitions/' + model.identity;
+      return Transformer.generateDefinitionReference(model.identity);
     }
+  },
+
+  generateDefinitionReference: function generateDefinitionReference(modelIdentity) {
+    return '#/definitions/' + modelIdentity;
   },
 
   /**
    * http://swagger.io/specification/#pathItemObject
    */
-  getPathItem: function getPathItem(sails, pathGroup, pathkey) {
+  getPathItem: function getPathItem(sails, pathGroup) {
     var methodGroups = _lodash2['default'].chain(pathGroup).indexBy('method').pick(['get', 'post', 'put', 'head', 'options', 'patch', 'delete']).value();
 
     return _lodash2['default'].mapValues(methodGroups, function (methodGroup, method) {
@@ -316,7 +322,7 @@ var Transformer = {
           'in': 'body',
           required: true,
           schema: {
-            $ref: Transformer.getDefinitionReference(sails, path)
+            $ref: Transformer.getDefinitionReferenceFromPath(sails, path)
           }
         });
       }
@@ -329,7 +335,7 @@ var Transformer = {
    * http://swagger.io/specification/#responsesObject
    */
   getResponses: function getResponses(sails, methodGroup) {
-    var $ref = Transformer.getDefinitionReference(sails, methodGroup.path);
+    var $ref = Transformer.getDefinitionReferenceFromPath(sails, methodGroup.path);
     var ok = {
       description: 'The requested resource'
     };
