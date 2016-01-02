@@ -165,6 +165,13 @@ var Transformer = {
     return childModel || parentModel;
   },
 
+  getModelIdentityFromPath: function getModelIdentityFromPath(sails, path) {
+    var model = Transformer.getModelFromPath(sails, path);
+    if (model) {
+      return model.identity;
+    }
+  },
+
   /**
    * http://swagger.io/specification/#definitionsObject
    */
@@ -283,11 +290,14 @@ var Transformer = {
    * http://swagger.io/specification/#parameterObject
    */
   getParameters: function getParameters(sails, methodGroup) {
-    var routeParams = methodGroup.keys;
+    var method = methodGroup.method;
+    var routeKeys = methodGroup.keys;
 
-    if (!routeParams.length) return [];
+    var canHavePayload = method === 'post' || method === 'put';
 
-    return _lodash2['default'].map(routeParams, function (param) {
+    if (!routeKeys.length && !canHavePayload) return [];
+
+    var parameters = _lodash2['default'].map(routeKeys, function (param) {
       return {
         name: param.name,
         'in': 'path',
@@ -295,6 +305,20 @@ var Transformer = {
         type: 'string'
       };
     });
+
+    if (canHavePayload) {
+      var path = methodGroup.path;
+      parameters.push({
+        name: Transformer.getModelIdentityFromPath(sails, path),
+        'in': 'body',
+        required: true,
+        schema: {
+          $ref: Transformer.getDefinitionReference(sails, path)
+        }
+      });
+    }
+
+    return parameters;
   },
 
   /**
