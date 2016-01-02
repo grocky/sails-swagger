@@ -308,14 +308,18 @@ var Transformer = {
 
     if (canHavePayload) {
       var path = methodGroup.path;
-      parameters.push({
-        name: Transformer.getModelIdentityFromPath(sails, path),
-        'in': 'body',
-        required: true,
-        schema: {
-          $ref: Transformer.getDefinitionReference(sails, path)
-        }
-      });
+      var modelIdentity = Transformer.getModelIdentityFromPath(sails, path);
+
+      if (modelIdentity) {
+        parameters.push({
+          name: modelIdentity,
+          'in': 'body',
+          required: true,
+          schema: {
+            $ref: Transformer.getDefinitionReference(sails, path)
+          }
+        });
+      }
     }
 
     return parameters;
