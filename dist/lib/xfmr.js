@@ -285,7 +285,7 @@ var Transformer = {
   getParameters: function getParameters(sails, methodGroup) {
     var routeParams = methodGroup.keys;
 
-    if (!routeParams.length) return;
+    if (!routeParams.length) return [];
 
     return _lodash2['default'].map(routeParams, function (param) {
       return {
