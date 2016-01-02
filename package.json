@@ -1,6 +1,6 @@
 {
   "name": "sails-swagger",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "swagger.io integration for sails.js",
   "main": "dist/api/hooks/swagger/index.js",
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/tjwebb/sails-swagger.git"
+    "url": "https://github.com/grocky/sails-swagger.git"
   },
   "keywords": [
     "sails",
