@@ -142,8 +142,14 @@ describe('xfmr', () => {
     it('should generate a Swagger Definitions object with nested schemas', () => {
       let swaggerDefinitions = xfmr.getDefinitions(sails);
 
-      assert(_.isObject(swaggerDefinitions.contact))
+      assert(_.isObject(swaggerDefinitions.contact.properties))
       assert.deepEqual({ '$ref': '#/definitions/group' }, swaggerDefinitions.contact.properties.group)
+    })
+    it('should generate a Swagger Definitions object with nested collection schemas', () => {
+      let swaggerDefinitions = xfmr.getDefinitions(sails);
+
+      assert(_.isObject(swaggerDefinitions.group.properties))
+      assert.deepEqual({ type: 'array', items: {'$ref': '#/definitions/contact'} }, swaggerDefinitions.group.properties.contacts)
     })
 
     context('populate turned off', () => {
@@ -153,8 +159,14 @@ describe('xfmr', () => {
       it('should generate a Swagger Definitions object with nested schemas', () => {
         let swaggerDefinitions = xfmr.getDefinitions(sails);
 
-        assert(_.isObject(swaggerDefinitions.contact))
+        assert(_.isObject(swaggerDefinitions.contact.properties))
         assert.deepEqual({ type: 'integer', format: 'int32' } , swaggerDefinitions.contact.properties.group)
+      })
+      it('should generate a Swagger Definitions object with nested collection schemas', () => {
+        let swaggerDefinitions = xfmr.getDefinitions(sails);
+
+        assert(_.isObject(swaggerDefinitions.group.properties))
+        assert.deepEqual({ type: 'array', items: { type: 'integer', format: 'int32' }} , swaggerDefinitions.group.properties.contacts)
       })
       after(() => {
         sails.config.blueprints.populate = true
