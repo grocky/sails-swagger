@@ -107,7 +107,7 @@ var Transformer = {
 
     var definitions = _lodash2['default'].transform(sails.models, function (definitions, model, modelName) {
       definitions[model.identity] = {
-        properties: Transformer.getDefinitionProperties(model.definition)
+        properties: Transformer.getDefinitionProperties(model.attributes, sails.models)
       };
     });
 
@@ -116,12 +116,36 @@ var Transformer = {
     return definitions;
   },
 
-  getDefinitionProperties: function getDefinitionProperties(definition) {
+  getDefinitionProperties: function getDefinitionProperties(attributes, models) {
 
-    return _lodash2['default'].mapValues(definition, function (def, attrName) {
-      var property = _lodash2['default'].pick(def, ['type', 'description', 'format', 'model']);
+    return _lodash2['default'].mapValues(attributes, function (attr, attrName) {
+      var property = _lodash2['default'].pick(attr, ['type', 'description', 'format', 'model', 'collection']);
 
-      return property.model && sails.config.blueprints.populate ? { '$ref': Transformer.generateDefinitionReference(property.model) } : _spec2['default'].getPropertyType(property.type);
+      var isNestedSchema = sails.config.blueprints.populate && property.model;
+      var isNestedCollection = sails.config.blueprints.populate && property.collection;
+
+      var properties = undefined;
+      if (isNestedSchema) {
+        properties = { '$ref': Transformer.generateDefinitionReference(property.model) };
+      } else if (property.model) {
+        properties = _spec2['default'].getPropertyType(_lodash2['default'].get(models[property.model], 'definition.id.type'));
+      } else if (isNestedCollection) {
+        properties = {
+          type: 'array',
+          items: {
+            '$ref': Transformer.generateDefinitionReference(property.collection)
+          }
+        };
+      } else if (property.collection) {
+        properties = {
+          type: 'array',
+          items: _spec2['default'].getPropertyType(_lodash2['default'].get(models[property.collection], 'definition.id.type'))
+        };
+      } else {
+        properties = _spec2['default'].getPropertyType(property.type);
+      }
+
+      return properties;
     });
   },
 
